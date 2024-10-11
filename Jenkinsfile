@@ -11,6 +11,7 @@ pipeline {
                 }
             }
             steps {
+		withEnv(['NODE_OPTIONS=--openssl-legacy-provider']) {
                 sh '''
                     ls -la
                     node --version
@@ -21,6 +22,7 @@ pipeline {
                 '''
             }
         }
+	}
 
         stage('Tests') {
             parallel {
