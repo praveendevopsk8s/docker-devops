@@ -99,6 +99,8 @@ stage('Deploy') {
 
             # Install netlify-cli globally
             npm install -g netlify-cli
+	    echo "Now shall wait for sometime"
+     	    sleep 60
             netlify --version
         '''
     }
