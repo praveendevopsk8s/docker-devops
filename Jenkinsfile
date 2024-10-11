@@ -1,5 +1,9 @@
 pipeline {
     agent any
+    
+    environment {
+        NETLIFY_SITE_ID = '36144c89-7e2f-4fd5-bc2e-9b34b30a22f3'
+    }
 
     stages {                
         stage('Build') {
@@ -102,6 +106,7 @@ stage('Deploy') {
 	    echo "Now shall wait for sometime"
      	    sleep 60
             netlify --version
+            echo "Deploying to site : $NETLIFY_SITE_ID
         '''
     }
 }
