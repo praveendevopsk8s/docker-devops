@@ -106,7 +106,7 @@ stage('Deploy') {
 	    echo "Now shall wait for sometime"
      	    sleep 60
             netlify --version
-            echo "Deploying to site : $NETLIFY_SITE_ID'
+            echo 'Deploying to site : $NETLIFY_SITE_ID'
         '''
     }
 }
