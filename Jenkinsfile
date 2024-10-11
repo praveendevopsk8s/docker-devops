@@ -72,20 +72,38 @@ pipeline {
                 '''
             }
         }	
-        stage('Deploy') {
-            agent {
-                docker {
-                    image 'node:18-alpine'
-                    reuseNode true
-                }
-            }
-            steps {
-                sh '''
-                    npm install netlify-cli
-		    node_modules/.bin/netlify --version
-                '''
-            }
-        }	    
+stage('Deploy') {
+    agent {
+        docker {
+            image 'node:18-alpine'
+            reuseNode true
+        }
+    }
+    steps {
+        sh '''
+            # Use a writable directory for npm global installs and cache
+            export HOME=/tmp/jenkins
+            mkdir -p $HOME/.npm-global
+            mkdir -p $HOME/.npm-cache
+
+            # Set npm to use this directory for global installs and cache
+            npm config set prefix="$HOME/.npm-global"
+            npm config set cache "$HOME/.npm-cache"
+
+            # Update the PATH to include the new directory
+            export PATH=$HOME/.npm-global/bin:$PATH
+
+            # Debugging: Print HOME and current user
+            echo "HOME: $HOME"
+            echo "Current User: $(whoami)"
+
+            # Install netlify-cli globally
+            npm install -g netlify-cli
+            netlify --version
+        '''
+    }
+}
+	    
     }
     post {
         always {
