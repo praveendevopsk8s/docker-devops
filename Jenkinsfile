@@ -14,6 +14,7 @@ pipeline {
                     reuseNode true
                 }
             }
+		
             steps {
                 withEnv(['NODE_OPTIONS=--openssl-legacy-provider']) {
                     sh '''
@@ -64,6 +65,11 @@ stage('Deploy') {
 	    args '--user=root'
         }
     }
+    environment {
+        NETLIFY_SITE_ID = '36144c89-7e2f-4fd5-bc2e-9b34b30a22f3'
+	NETLIFY_AUTH_TOKEN = credentials('netlify-token')
+	    CI_ENVIRONMENT_URL = 'https://chic-llama-f278dd.netlify.app/'
+    }	
     steps {
         sh '''
             # Use a writable directory for npm global installs and cache
