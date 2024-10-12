@@ -73,8 +73,42 @@ pipeline {
                 '''
             }
         }   
+        stage('Staging area') {
+            agent {
+                docker {
+                    image 'node:18-alpine'
+                    reuseNode true
+                    args '--user=root'
+                }
+            }
+            steps {
+                sh '''
+                    # Use a writable directory for npm global installs and cache
+                    echo "Small change to trigger the CI/CD Jenkins Pipeline"
+                    export HOME=/tmp/jenkins
+                    mkdir -p $HOME/.npm-global
+                    mkdir -p $HOME/.npm-cache
+                    # Set npm to use this directory for global installs and cache
+                    npm config set prefix="$HOME/.npm-global"
+                    npm config set cache "$HOME/.npm-cache"
+                    # Update the PATH to include the new directory
+                    export PATH=$HOME/.npm-global/bin:$PATH
+                    # Debugging: Print HOME and current user
+                    echo "HOME: $HOME"
+                    echo "Current User: $(whoami)"
+                    # Install netlify-cli globally
+                    npm install -g netlify-cli
+                    echo "Now shall wait for some time"
+                    sleep 10
+                    netlify --version
+                    echo 'Deploying to site : $NETLIFY_SITE_ID'
+                    netlify status
+                    netlify deploy --dir=build 
+                '''
+            }
+        } // End of Staging area        
 
-        stage('Deploy') {
+        stage('Deploy Prod') {
             agent {
                 docker {
                     image 'node:18-alpine'
@@ -107,7 +141,7 @@ pipeline {
                     netlify deploy --dir=build --prod
                 '''
             }
-        }
+        } //End of Deploy-Prod
 
         stage('Prod E2E') {
             agent {
