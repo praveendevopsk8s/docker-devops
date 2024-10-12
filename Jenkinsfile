@@ -78,7 +78,7 @@ pipeline {
                     npx playwright test --reporter=html
                 '''
             }
-        }   
+        }
 
         stage('Deploy') {
             agent {
@@ -120,6 +120,8 @@ pipeline {
                 '''
             }
         }
+
+        // New Prod E2E stage added here
         stage('Prod E2E') {
             agent {
                 docker {
@@ -134,10 +136,10 @@ pipeline {
 
             steps {
                 sh '''
-                    npx playwright test  --reporter=html
+                    npx playwright test --reporter=html
                 '''
-            }		
-		
+            }
+        }
     }
 
     post {
@@ -155,5 +157,4 @@ pipeline {
             ])
         }
     }
-}
 }
