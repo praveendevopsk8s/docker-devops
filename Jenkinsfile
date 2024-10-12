@@ -56,24 +56,18 @@ pipeline {
                     # Use a writable directory for npm global installs
                     export HOME=/tmp/jenkins
                     mkdir -p $HOME/.npm-global
-                    
                     # Set npm to use this directory for global installs
                     npm config set prefix="$HOME/.npm-global"
-                    
                     # Update the PATH to include the new directory
                     export PATH=$HOME/.npm-global/bin:$PATH
-                    
                     # Debugging: Print HOME and current user
                     echo "HOME: $HOME"
                     echo "Current User: $(whoami)"
-                    
                     # Install serve globally
                     npm install -g serve
-                    
                     # Serve the build and run tests
                     nohup serve -s build &
                     sleep 10
-                    
                     # Run Playwright tests
                     npx playwright test --reporter=html
                 '''
@@ -95,24 +89,18 @@ pipeline {
                     export HOME=/tmp/jenkins
                     mkdir -p $HOME/.npm-global
                     mkdir -p $HOME/.npm-cache
-
                     # Set npm to use this directory for global installs and cache
                     npm config set prefix="$HOME/.npm-global"
                     npm config set cache "$HOME/.npm-cache"
-
                     # Update the PATH to include the new directory
                     export PATH=$HOME/.npm-global/bin:$PATH
-
                     # Debugging: Print HOME and current user
                     echo "HOME: $HOME"
                     echo "Current User: $(whoami)"
-
                     # Install netlify-cli globally
                     npm install -g netlify-cli
-
                     echo "Now shall wait for some time"
                     sleep 10
-
                     netlify --version
                     echo 'Deploying to site : $NETLIFY_SITE_ID'
                     netlify status
@@ -120,6 +108,7 @@ pipeline {
                 '''
             }
         }
+
         stage('Prod E2E') {
             agent {
                 docker {
@@ -134,11 +123,11 @@ pipeline {
 
             steps {
                 sh '''
-                    npx playwright test  --reporter=html
+                    npx playwright test --reporter=html
                 '''
-            }		
-		
-    }
+            }
+        }
+    } // Close stages block
 
     post {
         always {
@@ -155,5 +144,4 @@ pipeline {
             ])
         }
     }
-}
 }
