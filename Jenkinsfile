@@ -3,7 +3,7 @@ pipeline {
     
     environment {
         NETLIFY_SITE_ID = '36144c89-7e2f-4fd5-bc2e-9b34b30a22f3'
-	NETLIFY_AUTH_TOKEN = credentials('netlify-token')
+        NETLIFY_AUTH_TOKEN = credentials('netlify-token')
     }
 
     stages {                
@@ -28,6 +28,7 @@ pipeline {
                 }
             }
         } 
+
         stage('Test Praveen1') {
             agent {
                 docker {
@@ -41,7 +42,8 @@ pipeline {
                     npm test
                 '''
             }
-        }	
+        }   
+
         stage('E2E') {
             agent {
                 docker {
@@ -76,69 +78,63 @@ pipeline {
                     npx playwright test --reporter=html
                 '''
             }
-        }	
-		stage('Deploy') {
-			agent {
-				docker {
-					image 'node:18-alpine'
-					reuseNode true
-					args '--user=root'
-        }
-    }
-			steps {
-				sh '''
-					# Use a writable directory for npm global installs and cache
-					echo "Small change to trigger the Ci CD Jenkins Pipeline"
-					export HOME=/tmp/jenkins
-					mkdir -p $HOME/.npm-global
-					mkdir -p $HOME/.npm-cache
+        }   
 
-					# Set npm to use this directory for global installs and cache
-					npm config set prefix="$HOME/.npm-global"
-					npm config set cache "$HOME/.npm-cache"
-
-					# Update the PATH to include the new directory
-					export PATH=$HOME/.npm-global/bin:$PATH
-
-					# Debugging: Print HOME and current user
-					echo "HOME: $HOME"
-					echo "Current User: $(whoami)"
-
-					# Install netlify-cli globally
-					npm install -g netlify-cli
-				echo "Now shall wait for sometime"
-					sleep 10
-					netlify --version
-					echo 'Deploying to site : $NETLIFY_SITE_ID'
-				netlify status
-					netlify deploy --dir=build --prod
-				'''
-    }
-}
-        stage('Prod E2E') {
+        stage('Deploy') {
             agent {
                 docker {
-                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    image 'node:18-alpine'
                     reuseNode true
+                    args '--user=root'
                 }
             }
-
-            environment {
-                CI_ENVIRONMENT_URL = 'PUT YOUR NETLIFY SITE URL HERE'
-            }
-
             steps {
                 sh '''
-                    npx playwright test  --reporter=html
+                    # Use a writable directory for npm global installs and cache
+                    echo "Small change to trigger the CI/CD Jenkins Pipeline"
+                    export HOME=/tmp/jenkins
+                    mkdir -p $HOME/.npm-global
+                    mkdir -p $HOME/.npm-cache
+
+                    # Set npm to use this directory for global installs and cache
+                    npm config set prefix="$HOME/.npm-global"
+                    npm config set cache "$HOME/.npm-cache"
+
+                    # Update the PATH to include the new directory
+                    export PATH=$HOME/.npm-global/bin:$PATH
+
+                    # Debugging: Print HOME and current user
+                    echo "HOME: $HOME"
+                    echo "Current User: $(whoami)"
+
+                    # Install netlify-cli globally
+                    npm install -g netlify-cli
+
+                    echo "Now shall wait for some time"
+                    sleep 10
+
+                    netlify --version
+                    echo 'Deploying to site : $NETLIFY_SITE_ID'
+                    netlify status
+                    netlify deploy --dir=build --prod
                 '''
             }
-	    
+        }
     }
+
     post {
         always {
             junit 'jest-results/junit.xml'
-            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwright HTML Report', reportTitles: '', useWrapperFileDirectly: true])
+            publishHTML([
+                allowMissing: false,
+                alwaysLinkToLastBuild: false,
+                keepAll: false,
+                reportDir: 'playwright-report',
+                reportFiles: 'index.html',
+                reportName: 'Playwright HTML Report',
+                reportTitles: '',
+                useWrapperFileDirectly: true
+            ])
         }
-    }	
-}
+    }
 }
