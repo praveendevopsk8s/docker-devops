@@ -78,7 +78,7 @@ pipeline {
                     npx playwright test --reporter=html
                 '''
             }
-        }   
+        }
 
         stage('Deploy') {
             agent {
@@ -117,6 +117,26 @@ pipeline {
                     echo 'Deploying to site : $NETLIFY_SITE_ID'
                     netlify status
                     netlify deploy --dir=build --prod
+                '''
+            }
+        }
+
+        // New Prod E2E stage added here
+        stage('Prod E2E') {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    reuseNode true
+                }
+            }
+
+            environment {
+                CI_ENVIRONMENT_URL = 'PUT YOUR NETLIFY SITE URL HERE'
+            }
+
+            steps {
+                sh '''
+                    npx playwright test --reporter=html
                 '''
             }
         }
