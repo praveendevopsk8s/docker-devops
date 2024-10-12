@@ -66,7 +66,7 @@ stage('Deploy') {
         }
     }
     environment {
-	CI_ENVIRONMENT_URL = 'https://chic-llama-f278dd.netlify.app/'
+	CI_ENVIRONMENT_URL = 'https://chic-llama-f278dd.netlify.app'
     }	
     steps {
         sh '''
