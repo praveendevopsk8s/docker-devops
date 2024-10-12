@@ -88,6 +88,7 @@ stage('Deploy') {
     steps {
         sh '''
             # Use a writable directory for npm global installs and cache
+	    echo "Small change to trigger the Ci CD Jenkins Pipeline"
             export HOME=/tmp/jenkins
             mkdir -p $HOME/.npm-global
             mkdir -p $HOME/.npm-cache
