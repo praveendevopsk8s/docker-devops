@@ -138,7 +138,7 @@ pipeline {
                 keepAll: false,
                 reportDir: 'playwright-report',
                 reportFiles: 'index.html',
-                reportName: 'Playwright HTML Report',
+                reportName: 'Collective HTML Report',
                 reportTitles: '',
                 useWrapperFileDirectly: true
             ])
