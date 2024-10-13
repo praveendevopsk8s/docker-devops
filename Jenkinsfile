@@ -17,44 +17,34 @@ pipeline {
             }
             steps {
                 sh '''
-                    # Use a writable directory for npm global installs and cache
-                    echo "Small change to trigger the CI/CD Jenkins Pipeline"
-                    export HOME=/tmp/jenkins
+                    # Set up environment for npm global installs
+                    export HOME=/var/lib/jenkins
                     mkdir -p $HOME/.npm-global
                     mkdir -p $HOME/.npm-cache
-                    # Set npm to use this directory for global installs and cache
-                    npm config set prefix="$HOME/.npm-global"
+                    npm config set prefix "$HOME/.npm-global"
                     npm config set cache "$HOME/.npm-cache"
-                    # Update the PATH to include the new directory
                     export PATH=$HOME/.npm-global/bin:$PATH
-                    # Debugging: Print HOME, PATH, and current user
-                    echo "HOME: $HOME"
                     echo "PATH: $PATH"
-                    echo "Current User: $(whoami)"
+                    
                     # Install netlify-cli and node-jq globally
-                    npm install -g netlify-cli 
-                    npm install -g node-jq
-                    # Verify installation and paths
+                    npm install -g netlify-cli node-jq
+
+                    # Debug: Verify node-jq installation
                     npm list -g --depth=0
-                    echo "Checking for node-jq installation..."
-                    which node-jq || echo "node-jq not found in PATH"
-                    ls -al $HOME/.npm-global/bin || echo "No executables found in $HOME/.npm-global/bin"
-                    echo "Now shall wait for some time"
+                    which node-jq
+                    ls -al $HOME/.npm-global/bin
                     sleep 10
+
+                    # Deploy to Netlify
                     netlify --version
-                    node-jq --version || echo "node-jq not available"
                     echo 'Deploying to site: $NETLIFY_SITE_ID'
-                    netlify status
-                    netlify deploy --dir=build --json > deploy-output.json  
-                    echo "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&*************************"
-                    node-jq -r '.deploy_url' deploy-output.json
+                    netlify deploy --dir=build --json > deploy-output.json
                 '''
                 script {
-                    // Attempt to use node-jq from a specific path
-                    def nodeJqPath = sh(script: "which node-jq || echo '$HOME/.npm-global/bin/node-jq'", returnStdout: true).trim()
+                    // Use the exact path for node-jq to avoid PATH issues
+                    def nodeJqPath = '/var/lib/jenkins/.npm-global/bin/node-jq'
                     echo "Using node-jq from path: ${nodeJqPath}"
-                   
-                    env.STAGING_URL = sh(script: "node-jq -r '.deploy_url' deploy-output.json", returnStdout: true).trim()
+                    env.STAGING_URL = sh(script: "${nodeJqPath} -r '.deploy_url' deploy-output.json", returnStdout: true).trim()
                 }
                 echo "Staging URL: ${env.STAGING_URL}"
             }                    
