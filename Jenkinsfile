@@ -106,7 +106,13 @@ pipeline {
                     netlify deploy --dir=build 
                 '''
             }
-        } // End of Staging area        
+        } // End of Staging area 
+        stage('Approval') {
+            steps {
+                echo 'Approval'
+                input message: 'Ready to deploy', ok: 'Yes, I am sure I want to deploy'
+            }
+        }
 
         stage('Deploy Prod') {
             agent {
