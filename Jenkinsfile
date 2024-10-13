@@ -7,7 +7,7 @@ pipeline {
     }
 
     stages {                   
-        stage('Deploying To Staging Area') {
+        stage('Staging area') {
             agent {
                 docker {
                     image 'node:18-alpine'
@@ -42,26 +42,6 @@ pipeline {
                 '''
             }
         } // End of Staging area 
-		
-        stage('Staging E2E') {
-            agent {
-                docker {
-                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
-                    reuseNode true
-                }
-            }
-
-            environment {
-                CI_ENVIRONMENT_URL = 'https://chic-llama-f278dd.netlify.app'
-            }
-
-            steps {
-                sh '''
-                    npx playwright test --reporter=html
-                '''
-            }
-        }
-		
         stage('Approval') {
             steps {
                 echo 'Approval'
@@ -101,18 +81,7 @@ pipeline {
                     netlify status
                     netlify deploy --dir=build --prod
                 '''
-                script {
-                    // Attempt to use node-jq from a specific path
-                    def nodeJqPath = sh(script: "which node-jq || echo '$HOME/.npm-global/bin/node-jq'", returnStdout: true).trim()
-                    // Use the exact path for node-jq to avoid PATH issues
-                    def nodeJqPath = '/var/lib/jenkins/.npm-global/bin/node-jq'
-                    echo "Using node-jq from path: ${nodeJqPath}"
-                   
-                    env.STAGING_URL = sh(script: "node-jq -r '.deploy_url' deploy-output.json", returnStdout: true).trim()
-                    env.STAGING_URL = sh(script: "${nodeJqPath} -r '.deploy_url' deploy-output.json", returnStdout: true).trim()
-                }
-                echo "Staging URL: ${env.STAGING_URL}"
-            } 				           
+            }
         } //End of Deploy-Prod
 
         stage('Prod E2E') {
