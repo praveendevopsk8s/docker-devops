@@ -44,15 +44,16 @@ pipeline {
                     node-jq --version || echo "node-jq not available"
                     echo 'Deploying to site: $NETLIFY_SITE_ID'
                     netlify status
-                    netlify deploy --dir=build --json > deploy-output.json                    
+                    netlify deploy --dir=build --json > deploy-output.json    
+                    node-jq -r '.deploy_url' deploy-output.json
                 '''
-                script {
-                    // Attempt to use node-jq from a specific path
-                    def nodeJqPath = sh(script: "which node-jq || echo '$HOME/.npm-global/bin/node-jq'", returnStdout: true).trim()
-                    echo "Using node-jq from path: ${nodeJqPath}"
-                    env.STAGING_URL = sh(script: "${nodeJqPath} -r '.deploy_url' deploy-output.json", returnStdout: true).trim()
-                }
-                echo "Staging URL: ${env.STAGING_URL}"
+                // script {
+                //     // Attempt to use node-jq from a specific path
+                //     def nodeJqPath = sh(script: "which node-jq || echo '$HOME/.npm-global/bin/node-jq'", returnStdout: true).trim()
+                //     echo "Using node-jq from path: ${nodeJqPath}"
+                //     env.STAGING_URL = sh(script: "${nodeJqPath} -r '.deploy_url' deploy-output.json", returnStdout: true).trim()
+                // }
+                // echo "Staging URL: ${env.STAGING_URL}"
             }                    
         }
     }
