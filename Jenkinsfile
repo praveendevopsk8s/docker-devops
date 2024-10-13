@@ -6,74 +6,8 @@ pipeline {
         NETLIFY_AUTH_TOKEN = credentials('netlify-token')
     }
 
-    stages {                
-        stage('Build') {
-            agent {
-                docker {
-                    image 'node:18-alpine'
-                    reuseNode true
-                }
-            }
-            steps {
-                withEnv(['NODE_OPTIONS=--openssl-legacy-provider']) {
-                    sh '''
-                        ls -la
-                        node --version
-                        npm --version
-                        cleanWs()
-                        npm ci
-                        npm run build
-                        ls -la
-                    '''
-                }
-            }
-        } 
-
-        stage('Test Praveen1') {
-            agent {
-                docker {
-                    image 'node:18-alpine'
-                    reuseNode true
-                }
-            }
-            steps {
-                sh '''
-                    test -f build/index.html
-                    npm test
-                '''
-            }
-        }   
-
-        stage('E2E') {
-            agent {
-                docker {
-                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
-                    reuseNode true
-                }
-            }
-            steps {
-                sh '''
-                    # Use a writable directory for npm global installs
-                    export HOME=/tmp/jenkins
-                    mkdir -p $HOME/.npm-global
-                    # Set npm to use this directory for global installs
-                    npm config set prefix="$HOME/.npm-global"
-                    # Update the PATH to include the new directory
-                    export PATH=$HOME/.npm-global/bin:$PATH
-                    # Debugging: Print HOME and current user
-                    echo "HOME: $HOME"
-                    echo "Current User: $(whoami)"
-                    # Install serve globally
-                    npm install -g serve
-                    # Serve the build and run tests
-                    nohup serve -s build &
-                    sleep 10
-                    # Run Playwright tests
-                    npx playwright test --reporter=html
-                '''
-            }
-        }   
-        stage('Staging area') {
+    stages {                   
+        stage('Deploying To Staging Area') {
             agent {
                 docker {
                     image 'node:18-alpine'
@@ -108,6 +42,26 @@ pipeline {
                 '''
             }
         } // End of Staging area 
+		
+        stage('Staging E2E') {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    reuseNode true
+                }
+            }
+
+            environment {
+                CI_ENVIRONMENT_URL = 'https://chic-llama-f278dd.netlify.app'
+            }
+
+            steps {
+                sh '''
+                    npx playwright test --reporter=html
+                '''
+            }
+        }
+		
         stage('Approval') {
             steps {
                 echo 'Approval'
@@ -147,7 +101,18 @@ pipeline {
                     netlify status
                     netlify deploy --dir=build --prod
                 '''
-            }
+                script {
+                    // Attempt to use node-jq from a specific path
+                    def nodeJqPath = sh(script: "which node-jq || echo '$HOME/.npm-global/bin/node-jq'", returnStdout: true).trim()
+                    // Use the exact path for node-jq to avoid PATH issues
+                    def nodeJqPath = '/var/lib/jenkins/.npm-global/bin/node-jq'
+                    echo "Using node-jq from path: ${nodeJqPath}"
+                   
+                    env.STAGING_URL = sh(script: "node-jq -r '.deploy_url' deploy-output.json", returnStdout: true).trim()
+                    env.STAGING_URL = sh(script: "${nodeJqPath} -r '.deploy_url' deploy-output.json", returnStdout: true).trim()
+                }
+                echo "Staging URL: ${env.STAGING_URL}"
+            } 				           
         } //End of Deploy-Prod
 
         stage('Prod E2E') {
