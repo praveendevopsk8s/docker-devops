@@ -32,7 +32,8 @@ pipeline {
                     echo "PATH: $PATH"
                     echo "Current User: $(whoami)"
                     # Install netlify-cli and node-jq globally
-                    npm install -g netlify-cli node-jq
+                    npm install -g netlify-cli 
+                    npm install -g node-jq
                     # Verify installation and paths
                     npm list -g --depth=0
                     echo "Checking for node-jq installation..."
