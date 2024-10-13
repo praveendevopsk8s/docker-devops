@@ -52,7 +52,7 @@ pipeline {
                     // Attempt to use node-jq from a specific path
                     // def nodeJqPath = sh(script: "which node-jq || echo '$HOME/.npm-global/bin/node-jq'", returnStdout: true).trim()
                     // echo "Using node-jq from path: ${nodeJqPath}"
-                    npm install -g node-jq
+                    npm install node-jq
                     env.STAGING_URL = sh(script: "node-jq -r '.deploy_url' deploy-output.json", returnStdout: true).trim()
                 }
                 echo "Staging URL: ${env.STAGING_URL}"
