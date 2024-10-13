@@ -97,13 +97,14 @@ pipeline {
                     echo "HOME: $HOME"
                     echo "Current User: $(whoami)"
                     # Install netlify-cli globally
-                    npm install -g netlify-cli
+                    npm install -g netlify-cli node-jq
                     echo "Now shall wait for some time"
                     sleep 10
                     netlify --version
                     echo 'Deploying to site : $NETLIFY_SITE_ID'
                     netlify status
-                    netlify deploy --dir=build 
+                    netlify deploy --dir=build --json > deploy-output.json
+                    node-jq -r '.deploy_url' deploy-output.json
                 '''
             }
         } // End of Staging area 
@@ -144,7 +145,7 @@ pipeline {
                     netlify --version
                     echo 'Deploying to site : $NETLIFY_SITE_ID'
                     netlify status
-                    netlify deploy --dir=build --prod --json > deploy-output.json
+                    netlify deploy --dir=build --prod
                 '''
             }
         } //End of Deploy-Prod
