@@ -17,28 +17,27 @@ pipeline {
             }
             steps {
                 sh '''
-                    # Set up environment for npm global installs
-                    export HOME=/var/lib/jenkins
+                    # Use a writable directory for npm global installs and cache
+                    echo "Small change to trigger the CI/CD Jenkins Pipeline"
+                    export HOME=/tmp/jenkins
                     mkdir -p $HOME/.npm-global
                     mkdir -p $HOME/.npm-cache
-                    npm config set prefix "$HOME/.npm-global"
+                    # Set npm to use this directory for global installs and cache
+                    npm config set prefix="$HOME/.npm-global"
                     npm config set cache "$HOME/.npm-cache"
+                    # Update the PATH to include the new directory
                     export PATH=$HOME/.npm-global/bin:$PATH
-                    echo "PATH: $PATH"
-                    
-                    # Install netlify-cli and node-jq globally
+                    # Debugging: Print HOME and current user
+                    echo "HOME: $HOME"
+                    echo "Current User: $(whoami)"
+                    # Install netlify-cli globally
                     npm install -g netlify-cli node-jq
-
-                    # Debug: Verify node-jq installation
-                    npm list -g --depth=0
-                    which node-jq
-                    ls -al $HOME/.npm-global/bin
+                    echo "Now shall wait for some time"
                     sleep 10
-
-                    # Deploy to Netlify
                     netlify --version
-                    echo 'Deploying to site: $NETLIFY_SITE_ID'
-                    netlify deploy --dir=build --json > deploy-output.json
+                    echo 'Deploying to site : $NETLIFY_SITE_ID'
+                    netlify status
+                    netlify deploy --dir=build --json > deploy-output.json                    
                 '''
                 script {
                     // Use the exact path for node-jq to avoid PATH issues
@@ -48,6 +47,106 @@ pipeline {
                 }
                 echo "Staging URL: ${env.STAGING_URL}"
             }                    
+        }// End of Staging area
+        stage('Staging E2E') {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    reuseNode true
+                }
+            }
+
+            environment {
+                CI_ENVIRONMENT_URL = "${env.STAGING_URL}"
+            }
+
+            steps {
+                sh '''
+                    npx playwright test  --reporter=html
+                '''
+            }
+
+            post {
+                always {
+                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Staging E2E', reportTitles: '', useWrapperFileDirectly: true])
+                }
+            }
+        }        
+        stage('Approval') {
+            steps {
+                echo 'Approval'
+                input message: 'Ready to deploy', ok: 'Yes, I am sure I want to deploy'
+            }
+        }
+
+        stage('Deploy Prod') {
+            agent {
+                docker {
+                    image 'node:18-alpine'
+                    reuseNode true
+                    args '--user=root'
+                }
+            }
+            steps {
+                sh '''
+                    # Use a writable directory for npm global installs and cache
+                    echo "Small change to trigger the CI/CD Jenkins Pipeline"
+                    export HOME=/tmp/jenkins
+                    mkdir -p $HOME/.npm-global
+                    mkdir -p $HOME/.npm-cache
+                    # Set npm to use this directory for global installs and cache
+                    npm config set prefix="$HOME/.npm-global"
+                    npm config set cache "$HOME/.npm-cache"
+                    # Update the PATH to include the new directory
+                    export PATH=$HOME/.npm-global/bin:$PATH
+                    # Debugging: Print HOME and current user
+                    echo "HOME: $HOME"
+                    echo "Current User: $(whoami)"
+                    # Install netlify-cli globally
+                    npm install -g netlify-cli
+                    echo "Now shall wait for some time"
+                    sleep 10
+                    netlify --version
+                    echo 'Deploying to site : $NETLIFY_SITE_ID'
+                    netlify status
+                    netlify deploy --dir=build --prod
+                '''
+            }
+        } //End of Deploy-Prod
+
+        stage('Prod E2E') {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    reuseNode true
+                }
+            }
+
+            environment {
+                CI_ENVIRONMENT_URL = 'https://chic-llama-f278dd.netlify.app'
+            }
+
+            steps {
+                sh '''
+                    npx playwright test --reporter=html
+                '''
+            }
+        }
+    } // Close stages block
+
+    post {
+        always {
+            junit 'jest-results/junit.xml'
+            publishHTML([
+                allowMissing: false,
+                alwaysLinkToLastBuild: false,
+                keepAll: false,
+                reportDir: 'playwright-report',
+                reportFiles: 'index.html',
+                reportName: 'Collective HTML Report',
+                reportTitles: '',
+                useWrapperFileDirectly: true
+            ])
         }
     }
 }
