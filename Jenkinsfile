@@ -49,14 +49,14 @@ pipeline {
                     echo "*************************"
                     node-jq -r '.deploy_url' deploy-output.json
                 '''
-                // script {
-                //     // Attempt to use node-jq from a specific path
-                //     // def nodeJqPath = sh(script: "which node-jq || echo '$HOME/.npm-global/bin/node-jq'", returnStdout: true).trim()
-                //     // echo "Using node-jq from path: ${nodeJqPath}"
+                script {
+                    // Attempt to use node-jq from a specific path
+                    def nodeJqPath = sh(script: "which node-jq || echo '$HOME/.npm-global/bin/node-jq'", returnStdout: true).trim()
+                    echo "Using node-jq from path: ${nodeJqPath}"
                    
-                //     env.STAGING_URL = sh(script: "node-jq -r '.deploy_url' deploy-output.json", returnStdout: true).trim()
-                // }
-                // echo "Staging URL: ${env.STAGING_URL}"
+                    env.STAGING_URL = sh(script: "node-jq -r '.deploy_url' deploy-output.json", returnStdout: true).trim()
+                }
+                echo "Staging URL: ${env.STAGING_URL}"
             }                    
         }
     }
