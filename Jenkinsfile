@@ -17,35 +17,44 @@ pipeline {
             }
             steps {
                 sh '''
-                    # Use a writable directory for npm global installs and cache
-                    echo "Small change to trigger the CI/CD Jenkins Pipeline"
+                    # Set up environment for npm global installs
                     export HOME=/tmp/jenkins
                     mkdir -p $HOME/.npm-global
                     mkdir -p $HOME/.npm-cache
-                    # Set npm to use this directory for global installs and cache
-                    npm config set prefix="$HOME/.npm-global"
+
+                    # Configure npm for global installs and cache
+                    npm config set prefix "$HOME/.npm-global"
                     npm config set cache "$HOME/.npm-cache"
-                    # Update the PATH to include the new directory
                     export PATH=$HOME/.npm-global/bin:$PATH
-                    # Debugging: Print HOME and current user
+
+                    # Debugging info
                     echo "HOME: $HOME"
                     echo "Current User: $(whoami)"
-                    # Install netlify-cli globally
+                    echo "PATH: $PATH"
+
+                    # Install netlify-cli and node-jq globally
                     npm install -g netlify-cli node-jq
-                    echo "Now shall wait for some time"
-                    sleep 10
-                    netlify --version
-                    echo 'Deploying to site : $NETLIFY_SITE_ID'
-                    netlify status
+
+                    # Ensure node-jq is properly installed
+                    echo "Checking if node-jq is installed"
+                    which node-jq || echo "node-jq not found"
+
+                    # Deploy to Netlify and capture the deploy URL
+                    echo "Deploying to site: $NETLIFY_SITE_ID"
                     netlify deploy --dir=build --json > deploy-output.json
-                    node-jq -r '.deploy_url' deploy-output.json
+
+                    # Use the full path to node-jq for extracting deploy_url
+                    /tmp/jenkins/.npm-global/bin/node-jq -r '.deploy_url' deploy-output.json
                 '''
-		script {
-                    env.STAGING_URL = sh(script: "node-jq -r '.deploy_url' deploy-output.json", returnStdout: true)
-                }
-				
+                script {
+                    // Extract deploy_url with full path to node-jq
+                    def nodeJqPath = '/tmp/jenkins/.npm-global/bin/node-jq'
+                    env.STAGING_URL = sh(script: "${nodeJqPath} -r '.deploy_url' deploy-output.json", returnStdout: true).trim()
+                    echo "Staging URL: ${env.STAGING_URL}"
+                }			
             }
         } // End of Staging area 
+
         stage('Approval') {
             steps {
                 echo 'Approval'
@@ -63,26 +72,22 @@ pipeline {
             }
             steps {
                 sh '''
-                    # Use a writable directory for npm global installs and cache
-                    echo "Small change to trigger the CI/CD Jenkins Pipeline"
+                    # Set up environment for npm global installs
                     export HOME=/tmp/jenkins
                     mkdir -p $HOME/.npm-global
                     mkdir -p $HOME/.npm-cache
-                    # Set npm to use this directory for global installs and cache
-                    npm config set prefix="$HOME/.npm-global"
+
+                    # Configure npm for global installs and cache
+                    npm config set prefix "$HOME/.npm-global"
                     npm config set cache "$HOME/.npm-cache"
-                    # Update the PATH to include the new directory
                     export PATH=$HOME/.npm-global/bin:$PATH
-                    # Debugging: Print HOME and current user
-                    echo "HOME: $HOME"
-                    echo "Current User: $(whoami)"
+
                     # Install netlify-cli globally
                     npm install -g netlify-cli
-                    echo "Now shall wait for some time"
-                    sleep 10
                     netlify --version
-                    echo 'Deploying to site : $NETLIFY_SITE_ID'
-                    netlify status
+
+                    # Deploy to production site
+                    echo 'Deploying to site: $NETLIFY_SITE_ID'
                     netlify deploy --dir=build --prod
                 '''
             }
@@ -111,7 +116,7 @@ pipeline {
     post {
         always {
             junit 'jest-results/junit.xml'
-            publishHTML([
+            publishHTML([ 
                 allowMissing: false,
                 alwaysLinkToLastBuild: false,
                 keepAll: false,
