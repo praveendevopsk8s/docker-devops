@@ -40,6 +40,10 @@ pipeline {
                     netlify deploy --dir=build --json > deploy-output.json
                     node-jq -r '.deploy_url' deploy-output.json
                 '''
+				script {
+                    env.STAGING_URL = sh(script: "node-jq -r '.deploy_url' deploy-output.json", returnStdout: true)
+                }
+				
             }
         } // End of Staging area 
         stage('Approval') {
