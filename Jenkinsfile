@@ -103,7 +103,7 @@ pipeline {
 
             environment {
                 CI_ENVIRONMENT_URL = "${env.STAGING_URL}"
-				echo "The CI_ENVRONMENT_URL is: $CI_ENVIRONMENT_URL"
+				echo "The CI_ENVRONMENT_URL is: ${CI_ENVIRONMENT_URL}"
             }
 
             steps {
