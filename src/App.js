@@ -18,7 +18,7 @@ function App() {
       </header>
       <p>
           Application version: 1
-          // {process.env.REACT_APP_VERSION}
+          
       </p>
     </div>
   );
